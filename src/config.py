@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Suno
+    # Suno: API sunoapi.org (recomendado) ou lib SunoAI com cookie
+    sunoapi_key: str = ""  # Bearer token de https://sunoapi.org/api-key
+    sunoapi_base_url: str = "https://api.sunoapi.org"
     suno_cookie: str = ""
 
     # API
@@ -23,8 +25,9 @@ class Settings(BaseSettings):
     downloads_dir: Path = Path("./downloads")
     output_videos_dir: Path = Path("./output_videos")
 
-    # YouTube
+    # YouTube (a API não aceita channelId no upload; o canal é o da conta das credenciais)
     google_client_secrets_path: Path = Path("./client_secrets.json")
+    youtube_credentials_path: str = ""  # opcional: path do credentials.json (conta/canal). Vazio = ao lado do client_secrets
     youtube_category_id: str = "10"  # Music
     youtube_privacy_status: str = "private"
 

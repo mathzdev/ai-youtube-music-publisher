@@ -5,14 +5,14 @@ Pipeline em Python para **gerar músicas com Suno AI**, montar vídeos (capa + t
 ## Workflow
 
 1. **Entrada**: API `POST /api/generate` (com `X-API-Key`) ou mensagem no tópico Kafka `music-generation-requests` com: `title`, `lyrics`, `genre`.
-2. **Suno**: Geração da música (SunoAI) e download do áudio + imagem de capa.
+2. **Suno**: Geração da música via [API sunoapi.org](https://docs.sunoapi.org) (recomendado) ou lib SunoAI (cookie); download do áudio + imagem de capa.
 3. **Vídeo**: Montagem do vídeo (fundo preto, título no topo, imagem Suno, áudio) com MoviePy.
 4. **Publicação**: Mensagem no tópico `video-ready-for-youtube` é consumida por um worker que faz upload para o YouTube (Google API).
 
 ## Pré-requisitos
 
 - Python 3.10+
-- Cookie do Suno (obter em [suno.ai](https://suno.ai) → DevTools → Network → cookie `_clerk_js_version` ou similar)
+- **Suno**: [API Key da sunoapi.org](https://sunoapi.org/api-key) (recomendado) ou cookie do [suno.ai](https://suno.ai) para a lib SunoAI
 - Conta Google Cloud com YouTube Data API v3 e arquivo `client_secrets.json` (OAuth 2.0)
 - Kafka (local ou remoto) para o fluxo assíncrono
 
@@ -24,14 +24,16 @@ python -m venv .venv
 source .venv/bin/activate   # ou .venv\Scripts\activate no Windows
 pip install -r requirements.txt
 cp .env.example .env
-# Edite .env: SUNO_COOKIE, API_KEY, e opcionalmente Kafka e paths.
+# Edite .env: SUNOAPI_KEY (recomendado) ou SUNO_COOKIE, API_KEY, e opcionalmente Kafka e paths.
 ```
 
 ## Variáveis de ambiente (.env)
 
 | Variável | Descrição |
 |----------|-----------|
-| `SUNO_COOKIE` | Cookie de autenticação do Suno (obrigatório para gerar músicas) |
+| `SUNOAPI_KEY` | **Recomendado.** API Key da [sunoapi.org](https://sunoapi.org/api-key). Se definida, a lib SunoAI não é usada. |
+| `SUNOAPI_BASE_URL` | Base URL da API (default: `https://api.sunoapi.org`) |
+| `SUNO_COOKIE` | Cookie do Suno (só usado se `SUNOAPI_KEY` não estiver definido) |
 | `API_KEY` | Chave para proteger `POST /api/generate` (header `X-API-Key`) |
 | `KAFKA_BOOTSTRAP_SERVERS` | Ex.: `localhost:9092` |
 | `KAFKA_TOPIC_GENERATE` | Tópico de pedidos de geração (default: `music-generation-requests`) |

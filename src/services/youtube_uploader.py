@@ -6,45 +6,57 @@ from src.config import settings
 from src.models.schemas import PublishToYouTubePayload
 
 
+def _resolve_credentials_path(override: str = "") -> Path:
+    """Path do arquivo credentials (token OAuth). Override vazio = default."""
+    if override and override.strip():
+        return Path(override.strip()).resolve()
+    if getattr(settings, "youtube_credentials_path", "") and str(settings.youtube_credentials_path).strip():
+        return Path(settings.youtube_credentials_path).resolve()
+    return Path(settings.google_client_secrets_path).parent / "credentials.json"
+
+
 class YouTubeUploader:
-    """Faz upload de um arquivo de vídeo para o YouTube usando OAuth2."""
+    """
+    Upload para o YouTube. O canal é sempre o da conta do credentials usado.
+    Para vários canais: use credentials diferentes (um arquivo por conta/canal).
+    """
 
     def __init__(self) -> None:
-        self._youtube = None
+        self._clients: dict[str, object] = {}  # path -> youtube client
 
-    def _get_youtube_client(self):
-        if self._youtube is None:
-            from google.oauth2.credentials import Credentials
-            from google_auth_oauthlib.flow import InstalledAppFlow
-            from google.auth.transport.requests import Request
-            from googleapiclient.discovery import build
-            from googleapiclient.http import MediaFileUpload
-            import os
+    def _get_youtube_client(self, credentials_path: Optional[Path] = None) -> object:
+        path = credentials_path or _resolve_credentials_path()
+        path_str = str(path)
+        if path_str in self._clients:
+            return self._clients[path_str]
 
-            SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
-            creds = None
-            token_path = Path(settings.google_client_secrets_path).parent / "credentials.json"
+        from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from google.auth.transport.requests import Request
+        from googleapiclient.discovery import build
 
-            if token_path.exists():
-                creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    if not settings.google_client_secrets_path or not Path(settings.google_client_secrets_path).exists():
-                        raise FileNotFoundError(
-                            f"Arquivo de credenciais não encontrado: {settings.google_client_secrets_path}. "
-                            "Baixe client_secrets.json do Google Cloud Console."
-                        )
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        str(settings.google_client_secrets_path), SCOPES
+        SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+        creds = None
+        if path.exists():
+            creds = Credentials.from_authorized_user_file(str(path), SCOPES)
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                secrets = settings.google_client_secrets_path
+                if not secrets or not Path(secrets).exists():
+                    raise FileNotFoundError(
+                        f"Arquivo de credenciais não encontrado: {secrets}. "
+                        "Baixe client_secrets.json do Google Cloud Console."
                     )
-                    creds = flow.run_local_server(port=0)
-                with open(token_path, "w") as f:
-                    f.write(creds.to_json())
+                flow = InstalledAppFlow.from_client_secrets_file(str(secrets), SCOPES)
+                creds = flow.run_local_server(port=0)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "w") as f:
+                f.write(creds.to_json())
 
-            self._youtube = build("youtube", "v3", credentials=creds)
-        return self._youtube
+        self._clients[path_str] = build("youtube", "v3", credentials=creds)
+        return self._clients[path_str]
 
     def upload(self, payload: PublishToYouTubePayload) -> str:
         """
@@ -53,7 +65,8 @@ class YouTubeUploader:
         """
         from googleapiclient.http import MediaFileUpload
 
-        youtube = self._get_youtube_client()
+        creds_path = _resolve_credentials_path(payload.youtube_credentials_path) if (getattr(payload, "youtube_credentials_path", None) or "").strip() else None
+        youtube = self._get_youtube_client(creds_path)
         video_path = Path(payload.video_path)
         if not video_path.exists():
             raise FileNotFoundError(f"Vídeo não encontrado: {video_path}")

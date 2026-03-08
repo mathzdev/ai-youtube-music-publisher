@@ -22,7 +22,7 @@ async def generate_music(
     Gera música no Suno (título, letra, gênero), monta o vídeo e envia para a fila
     de publicação no YouTube. Retorna os dados da música gerada e o request_id.
     """
-    from src.kafka.producer import get_producer, send_publish_message
+    from src.kafka.producer import build_publish_payload, get_producer, send_publish_message
     from src.services.suno_client import SunoService
     from src.services.video_builder import VideoBuilder
 
@@ -46,14 +46,16 @@ async def generate_music(
             output_path=output_dir / f"{request_id}.mp4",
         )
 
-        payload = {
-            "request_id": request_id,
-            "title": body.title,
-            "description": f"Música: {body.title}\nGênero: {body.genre}",
-            "video_path": str(video_path.resolve()),
-            "tags": [t.strip() for t in body.genre.split(",") if t.strip()] if body.genre else [],
-            "genre": body.genre,
-        }
+        tags_list = [t.strip() for t in body.genre.split(",") if t.strip()] if body.genre else []
+        payload = build_publish_payload(
+            request_id=request_id,
+            title=body.title,
+            video_path=str(video_path.resolve()),
+            description=f"Música: {body.title}\nGênero: {body.genre}",
+            tags=tags_list,
+            genre=body.genre or "",
+            youtube_credentials_path=(body.youtube_credentials_path or "").strip(),
+        )
         producer = await get_producer()
         await send_publish_message(producer, payload)
 

@@ -7,4 +7,8 @@ if __name__ == "__main__":
     if role not in ("generate", "publish"):
         print("Uso: python -m src.kafka <generate|publish>")
         sys.exit(1)
-    run_consumer(role)
+    try:
+        run_consumer(role)
+    except KeyboardInterrupt:
+        print("\nEncerrado.")
+        sys.exit(0)

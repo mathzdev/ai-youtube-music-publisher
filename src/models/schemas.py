@@ -13,6 +13,7 @@ class GenerateMusicRequest(BaseModel):
     genre: str = Field(default="", description="Gênero/tags (ex: 'pop, male voice')")
     make_instrumental: bool = Field(default=False, description="Gerar versão instrumental")
     model_version: str = Field(default="chirp-v3-5", description="Modelo Suno: chirp-v3-5, chirp-v3-0, chirp-v2-0")
+    youtube_credentials_path: str = Field(default="", description="Opcional: path do credentials.json do canal onde publicar no YouTube")
 
 
 # ----- Resposta do Suno (Clip simplificado para nossa API) -----
@@ -37,6 +38,18 @@ class SunoSongInfo(BaseModel):
             status=getattr(clip, "status", "") or str(clip.get("status", "")),
         )
 
+    @classmethod
+    def from_sunoapi_item(cls, item: dict) -> "SunoSongInfo":
+        """Converte um item de data.response.sunoData da API sunoapi.org (camelCase)."""
+        return cls(
+            id=str(item.get("id", "")),
+            title=str(item.get("title", "")),
+            audio_url=str(item.get("audioUrl") or item.get("audio_url", "")),
+            image_url=str(item.get("imageUrl") or item.get("image_url", "")),
+            image_large_url=str(item.get("imageUrl") or item.get("image_url", "")),
+            status="",
+        )
+
 
 # ----- Payload para publicar no YouTube (enviado no Kafka) -----
 class PublishToYouTubePayload(BaseModel):
@@ -48,3 +61,5 @@ class PublishToYouTubePayload(BaseModel):
     video_path: str = Field(..., description="Caminho absoluto do arquivo de vídeo no disco")
     tags: list[str] = Field(default_factory=list, description="Tags para o YouTube")
     genre: str = Field(default="", description="Gênero (pode ser usado em tags)")
+    # Canal: use credentials de outra conta. Caminho para credentials.json dessa conta (ex: ./credentials_canal_musica.json)
+    youtube_credentials_path: str = Field(default="", description="Opcional: path do credentials.json da conta/canal desejado")

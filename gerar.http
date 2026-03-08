@@ -3,7 +3,7 @@ Content-Type: application/json
 X-API-Key: your_secret_api_key_here
 
 {
-  "title": "Minha Música",
-  "lyrics": "Primeira linha da letra\nSegunda linha...",
-  "genre": "pop, male voice"
+  "title": "Os Guerreiros Se Preparam - 212 - EDM Version",
+  "lyrics": "Os guerreiros se preparam para a grande luta\nÉ Jesus, o Capitão, que avante os levará\nA milícia dos remidos marcha impoluta\nCerta que vitória alcançará\n\nEu quero estar com Cristo\nOnde a luta se travar\nNo lance imprevisto\nNa frente m'encontrar\nAté que O possa ver na glória\nSe alegrando da vitória\nOnde Deus vai me coroar\n\nEis os batalhões de Cristo prosseguindo avante\nNão os vê com que valor combatem contra o mal?\nPodes tu ficar dormindo, mesmo vacilante\nQuando atacam outros a Belial?\n\nEu quero estar com Cristo\nOnde a luta se travar\nNo lance imprevisto\nNa frente m'encontrar\nAté que O possa ver na glória\nSe alegrando da vitória\nOnde Deus vai me coroar\n\nDá-te pressa, não vaciles, hoje Deus te chama\nPara vires pelejar ao lado do Senhor\nEntra na batalha onde mais o fogo inflama\nE peleja contra o vil tentador\n\nEu quero estar com Cristo\nOnde a luta se travar\nNo lance imprevisto\nNa frente m'encontrar\nAté que O possa ver na glória\nSe alegrando da vitória\nOnde Deus vai me coroar\n\nA peleja é tremenda, torna-se renhida\nMas são poucos os soldados para batalhar\nÓ vem libertar as pobres almas oprimidas\nDe quem furioso, as quer tragar\n\nEu quero estar com Cristo\nOnde a luta se travar\nNo lance imprevisto\nNa frente m'encontrar\nAté que O possa ver na glória\nSe alegrando da vitória\nOnde Deus vai me coroar",
+  "genre": "edm, female voice"
 }

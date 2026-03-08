@@ -61,7 +61,11 @@ class VideoBuilder:
         img_w, img_h = img_clip.size
         scale = min((width * 0.6) / img_w, (height * 0.5) / img_h)
         new_w, new_h = int(img_w * scale), int(img_h * scale)
-        img_clip = img_clip.resize((new_w, new_h))
+        # MoviePy 2.x usa resized(); 1.x usa resize()
+        if hasattr(img_clip, "resized"):
+            img_clip = img_clip.resized((new_w, new_h))
+        else:
+            img_clip = img_clip.resize((new_w, new_h))
         img_clip = img_clip.with_duration(duration)
         img_clip = img_clip.with_position(("center", height // 2 - new_h // 2))
 

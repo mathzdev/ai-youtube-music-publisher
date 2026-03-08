@@ -9,6 +9,32 @@ from src.config import settings
 _producer: AIOKafkaProducer | None = None
 
 
+def build_publish_payload(
+    *,
+    request_id: str,
+    title: str,
+    video_path: str,
+    description: str = "",
+    tags: list[str] | None = None,
+    genre: str = "",
+    youtube_credentials_path: str = "",
+) -> dict[str, Any]:
+    """
+    Monta o payload enviado ao tópico video-ready-for-youtube.
+    Usado pelo POST /api/generate e pelo script queue_video_for_youtube.py
+    para garantir o mesmo formato que o consumer handle_publish_to_youtube espera.
+    """
+    return {
+        "request_id": request_id,
+        "title": title,
+        "description": description or "",
+        "video_path": video_path,
+        "tags": list(tags) if tags is not None else [],
+        "genre": genre or "",
+        "youtube_credentials_path": (youtube_credentials_path or "").strip(),
+    }
+
+
 async def get_producer() -> AIOKafkaProducer:
     global _producer
     if _producer is None:

@@ -35,6 +35,7 @@ async def run_publish_consumer() -> None:
     """
     Consome o tópico video-ready-for-youtube e faz upload de cada vídeo para o YouTube.
     """
+    print(f"[publish] Conectando ao Kafka em {settings.kafka_bootstrap_servers}...")
     consumer = AIOKafkaConsumer(
         settings.kafka_topic_publish,
         bootstrap_servers=settings.kafka_bootstrap_servers,
@@ -42,14 +43,19 @@ async def run_publish_consumer() -> None:
         value_deserializer=lambda x: x,
     )
     await consumer.start()
+    print(f"[publish] Consumindo tópico '{settings.kafka_topic_publish}'. Aguardando mensagens... (Ctrl+C para sair)")
     try:
         async for msg in consumer:
+            print(f"[publish] Mensagem recebida (partition={msg.partition}, offset={msg.offset})")
             try:
                 await handle_publish_to_youtube(msg.value)
             except Exception as e:
-                print(f"[publish_consumer] Erro ao processar mensagem: {e}")
+                print(f"[publish] Erro ao processar mensagem: {e}")
+                import traceback
+                traceback.print_exc()
     finally:
         await consumer.stop()
+        print("[publish] Consumer encerrado.")
 
 
 def run_consumer(role: str) -> None:
