@@ -1,7 +1,10 @@
 """Rotas da API: gerar música (síncrono ou enfileirar no Kafka) e enfileirar publicação."""
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 
 from src.api.dependencies import verify_api_key
 from src.config import settings
@@ -62,7 +65,10 @@ async def generate_music(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.exception("POST /api/generate failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -92,6 +98,7 @@ async def generate_music_queue(
         await send_generate_message(producer, payload)
         return {"request_id": request_id, "queued": True, "message": "Pedido enfileirado para processamento."}
     except Exception as e:
+        logger.exception("POST /api/generate/queue failed: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

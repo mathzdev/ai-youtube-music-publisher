@@ -28,22 +28,49 @@ class SunoService:
                 "chirp-v2-0": ModelVersions.CHIRP_V2_0,
             }
             model = model_map.get(model_version, ModelVersions.CHIRP_V3_5)
-            self._client = Suno(cookie=settings.suno_cookie, model_version=model)
+            try:
+                self._client = Suno(cookie=settings.suno_cookie, model_version=model)
+            except Exception as e:
+                msg = str(e)
+                if "Session ID" in msg or "session" in msg.lower() or "SUNO_COOKIE" in msg:
+                    raise ValueError(
+                        "Cookie do Suno inválido ou expirado. Pegue um novo em app.suno.ai: "
+                        "F12 → Aba Network → recarregue a página → procure a requisição com "
+                        "'client?_clerk_js_version' → copie o header Cookie e atualize SUNO_COOKIE no .env. "
+                        "Cookies do Suno expiram em ~7 dias."
+                    ) from e
+                raise
         return self._client
 
     def generate(self, request: GenerateMusicRequest) -> list[SunoSongInfo]:
         """Gera música no Suno a partir de título, letra e gênero."""
         client = self._get_client(request.model_version)
         tags = request.genre or "music"
-        songs = client.generate(
-            prompt=request.lyrics,
-            is_custom=True,
-            tags=tags,
-            title=request.title,
-            make_instrumental=request.make_instrumental,
-            wait_audio=True,
-            model_version=request.model_version,
-        )
+        try:
+            songs = client.generate(
+                prompt=request.lyrics,
+                is_custom=True,
+                tags=tags,
+                title=request.title,
+                make_instrumental=request.make_instrumental,
+                wait_audio=True,
+                model_version=request.model_version,
+            )
+        except Exception as e:
+            msg = str(e)
+            if "Service Suspended" in msg or "service has been suspended" in msg.lower():
+                raise ValueError(
+                    "A API não-oficial do Suno que esta biblioteca usa está suspensa no momento. "
+                    "Tente atualizar o pacote: pip install -U SunoAI. "
+                    "Ou use outra forma de gerar o áudio e alimentar o restante da pipeline (vídeo + YouTube)."
+                ) from e
+            if "Error response:" in msg and ("<html" in msg.lower() or "suspended" in msg.lower()):
+                raise ValueError(
+                    "Suno retornou erro (serviço suspenso ou indisponível). "
+                    "A lib SunoAI usa uma API não-oficial que pode ter sido desativada. "
+                    "Atualize o pacote ou aguarde atualização dos mantenedores."
+                ) from e
+            raise
         return [SunoSongInfo.from_clip(s) for s in songs]
 
     def download_audio(self, song: SunoSongInfo, output_dir: Path | None = None) -> Path:
