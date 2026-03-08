@@ -1,0 +1,9 @@
+POST http://localhost:8000/api/generate
+Content-Type: application/json
+X-API-Key: your_secret_api_key_here
+
+{
+  "title": "Minha Música",
+  "lyrics": "Primeira linha da letra\nSegunda linha...",
+  "genre": "pop, male voice"
+}
